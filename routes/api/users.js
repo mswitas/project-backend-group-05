@@ -91,5 +91,46 @@ router.post("/logout", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+router.post("/transaction/income", async (req, res) => {
+  try {
+    // Sprawdzenie czy użytkownik jest zalogowany
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
+    const { description, amount, date } = req.body;
+
+    // Pobranie aktualnego użytkownika z bazy danych
+    const user = await User.findById(req.session.userId);
+
+    // Sprawdzenie czy użytkownik istnieje
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Dodanie nowej transakcji do listy transakcji użytkownika
+    user.transactions.push({
+      description,
+      amount,
+      date,
+      category: "Przychod", // Kategoria przychodu
+    });
+
+    // Aktualizacja salda użytkownika
+    user.balance += amount;
+
+    // Zapisanie zmian w bazie danych
+    await user.save();
+
+    // Tworzenie odpowiedzi
+    const newTransaction = user.transactions[user.transactions.length - 1]; // Pobranie ostatniej dodanej transakcji
+    res.json({
+      newBalance: user.balance,
+      transaction: newTransaction,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
 module.exports = router;

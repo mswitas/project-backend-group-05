@@ -6,6 +6,7 @@ const MongoStore = require("connect-mongo");
 
 const app = express();
 
+// Konfiguracja sesji
 app.use(
   session({
     secret: "your_secret_key",
@@ -13,7 +14,7 @@ app.use(
     saveUninitialized: true,
     store: MongoStore.create({
       mongoUrl: "mongodb://localhost:27017/session_store",
-      ttl: 7 * 24 * 60 * 60,
+      ttl: 7 * 24 * 60 * 60, // czas życia sesji w sekundach (tydzień)
     }),
   })
 );
@@ -26,7 +27,10 @@ app.use(express.json());
 
 const usersRouter = require("./routes/api/users");
 
+const transRouter = require("./routes/api/transactions");
+
 app.use("/api", usersRouter);
+app.use("/api", transRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });

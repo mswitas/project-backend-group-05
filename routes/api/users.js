@@ -81,38 +81,5 @@ router.post("/logout", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-router.post("/transaction/income", async (req, res) => {
-  try {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
 
-    const { description, amount, date } = req.body;
-
-    const user = await User.findById(req.session.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    user.transactions.push({
-      description,
-      amount,
-      date,
-      category: "Przychod",
-    });
-
-    user.balance += amount;
-
-    await user.save();
-
-    const newTransaction = user.transactions[user.transactions.length - 1];
-    res.json({
-      newBalance: user.balance,
-      transaction: newTransaction,
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send("Server Error");
-  }
-});
 module.exports = router;

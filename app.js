@@ -3,8 +3,11 @@ const logger = require("morgan");
 const cors = require("cors");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
+require("dotenv").config();
 
 const app = express();
+
+const mongoUrl = process.env.URI_DATABASE;
 
 // Konfiguracja sesji
 app.use(
@@ -13,7 +16,7 @@ app.use(
     resave: false,
     saveUninitialized: true,
     store: MongoStore.create({
-      mongoUrl: "mongodb://localhost:27017/session_store",
+      mongoUrl,
       ttl: 7 * 24 * 60 * 60, // czas życia sesji w sekundach (tydzień)
     }),
   })

@@ -22,7 +22,7 @@ router.post("/transaction/income", async (req, res) => {
       description,
       amount,
       date,
-      category: "Przychod",
+      category: "Przychód",
     });
 
     user.balance += amount;
@@ -148,6 +148,7 @@ router.post("/transaction/expense", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
 router.get("/transaction/expense", async (req, res) => {
   try {
     console.log("GET /transaction/expense");
@@ -210,6 +211,7 @@ function generateMonthStats(transactions) {
 
   return monthStats;
 }
+
 router.delete("/transaction", async (req, res) => {
   try {
     console.log("DELETE /transaction");
@@ -252,4 +254,131 @@ router.delete("/transaction", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
+// Endpoint: GET /transaction/income-categories
+router.get("/transaction/income-categories", async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const user = await User.findById(req.session.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const categories = user.transactions.map(
+      (transaction) => transaction.category
+    );
+
+    const uniqueCategories = [...new Set(categories)];
+
+    res.json(uniqueCategories);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+router.get("/transaction/expense-categories", async (req, res) => {
+  try {
+    const expenseCategories = [
+      "Produkty",
+      "Alkohol",
+      "Rozrywka",
+      "Zdrowie",
+      "Transport",
+      "Wszystko dla domu",
+      "Technika",
+      "Komunikacja i media",
+      "Sport i hobby",
+      "Edukacja",
+      "Inne",
+    ];
+    res.json(expenseCategories);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+router.get("/transaction/period-data", async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ error: "Date parameter is required" });
+    }
+
+    const startDate = new Date(`${date}-01`);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 1);
+
+    const user = await User.findById(req.session.userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const transactionsInPeriod = user.transactions.filter(
+      (transaction) =>
+        new Date(transaction.date) >= startDate &&
+        new Date(transaction.date) < endDate
+    );
+
+    const incomes = transactionsInPeriod.filter(
+      (transaction) => transaction.amount > 0
+    );
+    const expenses = transactionsInPeriod.filter(
+      (transaction) => transaction.amount < 0
+    );
+
+    const incomesData = {};
+    const expensesData = {};
+
+    incomes.forEach((income) => {
+      const category = income.category;
+      if (!incomesData[category]) {
+        incomesData[category] = { total: 0 };
+      }
+      incomesData[category].total += income.amount;
+      if (!incomesData[category][income.description]) {
+        incomesData[category][income.description] = 0;
+      }
+      incomesData[category][income.description] += income.amount;
+    });
+
+    expenses.forEach((expense) => {
+      const category = expense.category;
+      if (!expensesData[category]) {
+        expensesData[category] = { total: 0 };
+      }
+      expensesData[category].total += Math.abs(expense.amount);
+      if (!expensesData[category][expense.description]) {
+        expensesData[category][expense.description] = 0;
+      }
+      expensesData[category][expense.description] += Math.abs(expense.amount);
+    });
+
+    const response = {
+      incomes: {
+        total: incomes.reduce((sum, income) => sum + income.amount, 0),
+        incomesData: incomesData,
+      },
+      expenses: {
+        total: expenses.reduce(
+          (sum, expense) => sum + Math.abs(expense.amount),
+          0
+        ),
+        expensesData: expensesData,
+      },
+    };
+
+    res.json(response);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 module.exports = router;

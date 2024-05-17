@@ -3,7 +3,7 @@ const app = require("./app");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-const PORT = process.env.PORT || 27017;
+const PORT = process.env.PORT || 3000;
 const URI_DATABASE =
   process.env.URI_DATABASE || "mongodb://localhost:27017/Kapusta";
 

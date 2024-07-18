@@ -34,8 +34,8 @@ const usersRouter = require("./routes/api/users");
 const transRouter = require("./routes/api/transactions");
 
 // Użyj routera użytkowników
-app.use("/api", usersRouter);
-app.use("/api", transRouter);
+app.use("/auth", usersRouter);
+app.use("/auth", transRouter);
 
 // Obsługa 404 - Nie znaleziono
 app.use((req, res) => {
